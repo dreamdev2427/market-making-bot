@@ -11,11 +11,11 @@ var BigNumber = require("big-number");
 const ERC20ABI = require("./ERC20.json");
 
 const {
-  UNISWAP_ROUTER_ADDRESS,
-  UNISWAP_FACTORY_ADDRESS,
-  UNISWAP_ROUTER_ABI,
-  UNISWAP_FACTORY_ABI,
-  UNISWAP_POOL_ABI,
+  PANCAKESWAP_ROUTER_ADDRESS,
+  PANCAKESWAP_FACTORY_ADDRESS,
+  PANCAKESWAP_ROUTER_ABI,
+  PANCAKESWAP_FACTORY_ABI,
+  PANCAKESWAP_POOL_ABI,
   HTTP_PROVIDER_LINK,
   WEBSOCKET_PROVIDER_LINK,
   HTTP_PROVIDER_LINK_TEST,
@@ -57,14 +57,14 @@ async function createWeb3() {
       new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK)
     );
     uniswapRouter = new web3.eth.Contract(
-      UNISWAP_ROUTER_ABI,
-      UNISWAP_ROUTER_ADDRESS
+      PANCAKESWAP_ROUTER_ABI,
+      PANCAKESWAP_ROUTER_ADDRESS
     );
     uniswapFactory = new web3.eth.Contract(
-      UNISWAP_FACTORY_ABI,
-      UNISWAP_FACTORY_ADDRESS
+      PANCAKESWAP_FACTORY_ABI,
+      PANCAKESWAP_FACTORY_ADDRESS
     );
-    abiDecoder.addABI(UNISWAP_ROUTER_ABI);
+    abiDecoder.addABI(PANCAKESWAP_ROUTER_ABI);
 
     return true;
   } 
@@ -124,7 +124,7 @@ async function main() {
           let transaction = await web3.eth.getTransaction(transactionHash);
           if (
             transaction != null &&
-            transaction["to"] && transaction["to"].toString().toLowerCase() == UNISWAP_ROUTER_ADDRESS.toString().toLowerCase()
+            transaction["to"] && transaction["to"].toString().toLowerCase() == PANCAKESWAP_ROUTER_ADDRESS.toString().toLowerCase()
           ) {
             await handleTransaction(
               transaction,
@@ -259,7 +259,7 @@ async function handleTransaction(
 async function approve(gasPrice, token_address, user_wallet) {
   try {
     var allowance = await out_token_info.token_contract.methods
-      .allowance(user_wallet.address, UNISWAP_ROUTER_ADDRESS)
+      .allowance(user_wallet.address, PANCAKESWAP_ROUTER_ADDRESS)
       .call();
 
     allowance = BigNumber(Math.floor(Number(allowance)).toString());
@@ -276,7 +276,7 @@ async function approve(gasPrice, token_address, user_wallet) {
         gas: 50000,
         gasPrice: gasPrice * ONE_GWEI,
         data: out_token_info.token_contract.methods
-          .approve(UNISWAP_ROUTER_ADDRESS, max_allowance)
+          .approve(PANCAKESWAP_ROUTER_ADDRESS, max_allowance)
           .encodeABI(),
       };
 
@@ -303,7 +303,7 @@ async function triggersFrontRun(transaction, out_token_address, amount, level) {
       parseInt(transaction["gasPrice"]) / 10 ** 9
     );
 
-    if (transaction["to"] && transaction["to"].toString().toLowerCase() != UNISWAP_ROUTER_ADDRESS.toString().toLowerCase()) {
+    if (transaction["to"] && transaction["to"].toString().toLowerCase() != PANCAKESWAP_ROUTER_ADDRESS.toString().toLowerCase()) {
       return false;
     }
 
@@ -498,7 +498,7 @@ async function swap(
 
       var tx = {
         from: from.address,
-        to: UNISWAP_ROUTER_ADDRESS,
+        to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit,
         gasPrice: gasPrice,
         data: encodedABI,
@@ -530,7 +530,7 @@ async function swap(
 
       var tx = {
         from: from.address,
-        to: UNISWAP_ROUTER_ADDRESS,
+        to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit,
         gasPrice: gasPrice,
         data: encodedABI,
@@ -655,7 +655,7 @@ async function getPoolInfo(in_token_address, out_token_address, level) {
     var log_str = "Address:\t" + pool_address;
     if(!attack_started) console.log(log_str.white);
 
-    var pool_contract = new web3.eth.Contract(UNISWAP_POOL_ABI, pool_address);
+    var pool_contract = new web3.eth.Contract(PANCAKESWAP_POOL_ABI, pool_address);
     var reserves = await pool_contract.methods.getReserves().call();
 
     var token0_address = await pool_contract.methods.token0().call();
