@@ -19,7 +19,7 @@ const {
   HTTP_PROVIDER_LINK,
   GAS_STATION,
 } = require("./constants.js");
-const { PR_K, TOKEN_ADDRESS, AMOUNT, PERIOD, WETH_TOKEN_ADDRESS } = require("./env.js");
+const { PR_K, TOKEN_ADDRESS, AMOUNT, PERIOD, WBNB_ADDRESS } = require("./env.js");
 
 var input_token_info;
 var out_token_info;
@@ -73,7 +73,7 @@ async function main() {
 
     const out_token_address = TOKEN_ADDRESS;
 
-    await approve(WETH_TOKEN_ADDRESS, USER_WALLET);
+    await approve(WBNB_ADDRESS, USER_WALLET);
     await approve(out_token_address, USER_WALLET);
 
     doSwap();
@@ -253,7 +253,7 @@ async function swap(
       swap = pancakeRouter.methods.swapExactTokensForTokens(
         inputtokens,
         "0",
-        [WETH_TOKEN_ADDRESS, out_token_address],
+        [WBNB_ADDRESS, out_token_address],
         from.address,
         deadline
       );
@@ -286,7 +286,7 @@ async function swap(
       swap = pancakeRouter.methods.swapExactTokensForTokens(
         outputtoken.toString(),
         "0",
-        [out_token_address, WETH_TOKEN_ADDRESS],
+        [out_token_address, WBNB_ADDRESS],
         from.address,
         deadline
       );
@@ -398,7 +398,7 @@ async function getPoolInfo(in_token_address, out_token_address) {
 
     var token0_address = await pool_contract.methods.token0().call();
 
-    if (token0_address === WETH_TOKEN_ADDRESS) {
+    if (token0_address === WBNB_ADDRESS) {
       var forward = true;
       var weth_balance = reserves[0];
       var token_balance = reserves[1];
@@ -441,7 +441,7 @@ async function getETHInfo(user_wallet) {
     var symbol = "ETH";
 
     return {
-      address: WETH_TOKEN_ADDRESS,
+      address: WBNB_ADDRESS,
       balance: balance,
       symbol: symbol,
       decimals: decimals,
@@ -479,7 +479,7 @@ async function getTokenInfo(tokenAddr, user_wallet) {
 }
 
 async function prepareSwap() {
-  in_token_address = WETH_TOKEN_ADDRESS;
+  in_token_address = WBNB_ADDRESS;
   out_token_address = TOKEN_ADDRESS;
   user_wallet = USER_WALLET;
   amount = AMOUNT;
