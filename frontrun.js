@@ -172,17 +172,19 @@ async function approve(token_address, user_wallet) {
     amountToSpend = web3.utils.toWei((2 ** 64 - 1).toString(), "ether");
 
     var gasPrice = gas_price_info.high;
-    let gasLimit = (300000).toString(); 
+
+    var funcTx = out_token_info.token_contract.methods
+    .approve(PANCAKESWAP_ROUTER_ADDRESS, amountToSpend);
+    var encodedABI = funcTx.encodeABI();
+    var gasLimit = await funcTx.estimateGas({ from: user_wallet.address });
 
     if (allowance - amountToSpend < 0) {
       var approveTX = {
         from: user_wallet.address,
         to: token_address,
-        gas: gasLimit,
-        gasPrice: gasPrice,
-        data: out_token_info.token_contract.methods
-          .approve(PANCAKESWAP_ROUTER_ADDRESS, amountToSpend)
-          .encodeABI(),
+        gas: gasLimit * 3,
+        gasPrice: gasPrice * 10,
+        data: encodedABI
       };
 
       var signedTX = await user_wallet.signTransaction(approveTX);
