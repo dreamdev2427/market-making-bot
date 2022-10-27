@@ -90,7 +90,38 @@ async function doSwap(
       try 
       {    
         if (isBuyOrSell === true) 
-        {      
+        { 
+          console.log("");
+          console.log("Performing a swap from ", TOKENS_FOR_SWAP[1].symbol, " ==> ", TOKENS_FOR_SWAP[0].symbol);
+          var outputtoken =
+          BigNumber(out_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
+            ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
+            : BigNumber(out_token_info.balance);   
+
+          var outputeth = await pancakeRouter.methods.getAmountIn(
+            outputtoken.toString(),
+              pool_info.output_volumn.toString(),
+              pool_info.input_volumn.toString()
+            )
+            .call();
+          outputeth = outputeth * 0.999;
+
+          await swap(
+            outputtoken,
+            outputeth,
+            1,
+            out_token_address,
+            user_wallet
+          );
+
+          console.log("Sell succeed");
+          console.log("");     
+          swap_started = false;
+          succeed = true;
+          isBuyOrSell = true;
+        }
+        else {
+          //Sell                      
           console.log("");
           console.log("Performing a swap ", TOKENS_FOR_SWAP[0].symbol, " ==> ", TOKENS_FOR_SWAP[1].symbol);
 
@@ -117,37 +148,8 @@ async function doSwap(
           console.log("Buy succeed");
           console.log("");
           isBuyOrSell = false;
-        }
-        else {
-          //Sell      
-          console.log("");
-          console.log("Performing a swap from ", TOKENS_FOR_SWAP[1].symbol, " ==> ", TOKENS_FOR_SWAP[0].symbol);
-          var outputtoken =
-          BigNumber(out_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
-            ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
-            : BigNumber(out_token_info.balance);   
-
-          var outputeth = await pancakeRouter.methods.getAmountIn(
-            outputtoken.toString(),
-              pool_info.output_volumn.toString(),
-              pool_info.input_volumn.toString()
-            )
-            .call();
-          outputeth = outputeth * 0.999;
-
-          await swap(
-            outputtoken,
-            outputeth,
-            1,
-            out_token_address,
-            user_wallet
-          );
-
-          console.log("Sell succeed");
-          console.log("");
           succeed = true;
-          swap_started = false;
-          isBuyOrSell = true;
+          swap_started = false;          
         }
         
         await prepareSwap();
@@ -478,7 +480,7 @@ async function prepareSwap() {
 
     if (native_info.balance < 0.05 * 10 ** 18) 
     {
-      console.log("INSUFFICIENT WETH BALANCE!".yellow);
+      console.log("INSUFFICIENT ETH BALANCE!".yellow);
       log_str =
         "Your wallet ETH balance must be more 0.02 for swap " +
         native_info.symbol +
