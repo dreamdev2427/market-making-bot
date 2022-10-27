@@ -118,7 +118,7 @@ async function doSwap(
           console.log("");     
           swap_started = false;
           succeed = true;
-          isBuyOrSell = true;
+          isBuyOrSell = false;
         }
         else {
           //Sell                      
@@ -147,7 +147,7 @@ async function doSwap(
 
           console.log("Buy succeed");
           console.log("");
-          isBuyOrSell = false;
+          isBuyOrSell = true;
           succeed = true;
           swap_started = false;          
         }

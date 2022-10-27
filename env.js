@@ -13,7 +13,7 @@ const TOKENS_FOR_SWAP = [
     }
 ];
 
-const AMOUNT = 1000;   // 1000 TAZOR token
+const AMOUNT = 1;   // 1000 TAZOR token
 const PERIOD = 30;     // Buy, Sel period (sec)
 
 
