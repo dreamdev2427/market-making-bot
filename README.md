@@ -25,3 +25,11 @@ Binance market making bot that purchases the specified token when liquidity is a
     That's all.
 - Install packages `yarn install` from inside project folder
 - Run script `yarn start` or `node frontrun.js`
+
+## run bot with forever 
+    Please install forever with this command:
+            npm install -g forever
+    And you can run this bot with forever:
+            forever start frontrun.js
+    If you want to stop it:
+            forever stop frontrun.js
