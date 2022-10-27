@@ -72,10 +72,9 @@ async function main() {
       throw error;
     }
 
-    const out_token_address = TOKEN_ADDRESS;
-
+    await prepareSwap();
     await approve(WBNB_ADDRESS, USER_WALLET);
-    await approve(out_token_address, USER_WALLET);
+    await approve(TOKEN_ADDRESS, USER_WALLET);
 
     doSwap();
   }catch(err) {
@@ -179,7 +178,7 @@ async function doSwap(
         }
       } catch (error) {
         swap_started = false;
-        throw error;
+        console.log("Exception on swap : ", error);
       }
     },
 		PERIOD * 1000
@@ -217,7 +216,7 @@ async function approve(token_address, user_wallet) {
       console.log("Sucessfully approved ", token_address);
     }
   } catch (error) {
-    console.log("Error on approve ");
+    console.log("Error on approve ", error);
     throw error;
   }
 }
@@ -266,7 +265,7 @@ async function swap(
         deadline
       );
       var encodedABI = swap.encodeABI();
-      gasLimit = await swap.estimateGas({ from: accountStr });
+      gasLimit = await swap.estimateGas({ from: user_wallet.address });
 
       var tx = {
         from: from.address,
@@ -455,7 +454,7 @@ async function getETHInfo(user_wallet) {
       decimals: decimals,
     };
   } catch (error) {
-    console.log("get WETH balance error");
+    console.log("get WETH balance ", error);
     throw error;
   }
 }
