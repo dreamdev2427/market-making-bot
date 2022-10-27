@@ -11,8 +11,6 @@ const HTTP_PROVIDER_LINK = "https://data-seed-prebsc-1-s1.binance.org:8545/";
 
 const GAS_STATION = 'https://api.debank.com/chain/gas_price_dict_v2?chain=bsc';
 
-const UPDATE_TIME_INTERVAL = 100;
-
 module.exports = {
 	PANCAKESWAP_ROUTER_ADDRESS,
 	PANCAKESWAP_FACTORY_ADDRESS,
@@ -25,5 +23,4 @@ module.exports = {
 
     GAS_STATION,
     
-    UPDATE_TIME_INTERVAL,
 }

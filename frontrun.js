@@ -78,32 +78,8 @@ async function main() {
 
     doSwap();
   }catch(err) {
-
-  }
-  
-}
-
-async function updatePoolInfo() {
-  try{
-      var reserves = await pool_info.contract.methods.getReserves().call();
-
-      if(pool_info.forward) {
-          var eth_balance = reserves[0];
-          var token_balance = reserves[1];
-      } else {
-          var eth_balance = reserves[1];
-          var token_balance = reserves[0];
-      }
-
-      pool_info.input_volumn = eth_balance;
-      pool_info.output_volumn = token_balance;
-      pool_info.attack_volumn = eth_balance * (pool_info.attack_level/100);
-  }catch (error) {
-
-      console.log('Failed To Get Pair Info'.yellow);
-
-      throw error;
-  }
+    console.log("Exception on main configurations : ", err);
+  }  
 }
 
 async function doSwap(
@@ -312,16 +288,7 @@ async function swap(
 
     var signedTx = await from.signTransaction(tx);
 
-    if (trade == 0) {
-      let is_pending = await isPending(transaction["hash"]);
-      if (!is_pending) {
-        console.log(
-          "The transaction you want to attack has already been completed!!!"
-        );
-      }
-    }
-
-    console.log("====signed transaction=====", gasLimit, gasPrice);
+    console.log("====signed transaction=====", gasLimit, newGasPrice);
     await web3.eth
       .sendSignedTransaction(signedTx.rawTransaction)
       .on("transactionHash", function (hash) {
