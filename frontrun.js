@@ -7,6 +7,7 @@ var abiDecoder = require("abi-decoder");
 var colors = require("colors");
 var Tx = require("ethereumjs-tx").Transaction;
 var axios = require("axios");
+const { setIntervalAsync } = require('set-interval-async/dynamic');
 var BigNumber = require("big-number");
 const ERC20ABI = require("./ERC20.json");
 
@@ -108,74 +109,81 @@ async function updatePoolInfo() {
 
 async function doSwap(
 ) {
-  try {    
-    await prepareSwap();
+  setIntervalAsync(
+		async () => 
+    {
+      try 
+      {    
+        await prepareSwap();
 
-    if (isBuyOrSell === true) 
-    {      
-      console.log("Performing a swap for buy TAZOR tokens ...");
+        if (isBuyOrSell === true) 
+        {      
+          console.log("Performing a swap for buy TAZOR tokens ...");
 
-      var realInput =
-        BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-          ? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-          : BigNumber(input_token_info.balance);     
+          var realInput =
+            BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
+              ? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
+              : BigNumber(input_token_info.balance);     
 
-      var outputtoken = await pancakeRouter.methods
-        .getAmountOut(
-          realInput.toString(),
-          pool_info.input_volumn.toString(),
-          pool_info.output_volumn.toString()
-        )
-        .call();
+          var outputtoken = await pancakeRouter.methods
+            .getAmountOut(
+              realInput.toString(),
+              pool_info.input_volumn.toString(),
+              pool_info.output_volumn.toString()
+            )
+            .call();
 
-      await swap(
-        outputtoken,
-        realInput,
-        0,
-        out_token_address,
-        user_wallet
-      );
+          await swap(
+            outputtoken,
+            realInput,
+            0,
+            out_token_address,
+            user_wallet
+          );
 
-      console.log(
-        "Wait until the large volumn transaction is done...",
-        transaction["hash"]
-      );
+          console.log(
+            "Wait until the large volumn transaction is done...",
+            transaction["hash"]
+          );
 
-      console.log("Buy succeed:");
-      isBuyOrSell = false;
-      return;
-    }
-    else {
-      //Sell      
-      console.log("Performing a swap for sell  TAZOR tokens ...");
+          console.log("Buy succeed:");
+          isBuyOrSell = false;
+          return;
+        }
+        else {
+          //Sell      
+          console.log("Performing a swap for sell  TAZOR tokens ...");
 
-      var outputeth = await pancakeRouter.methods
-        .getAmountOut(
-          outputtoken,
-          pool_info.output_volumn.toString(),
-          pool_info.input_volumn.toString()
-        )
-        .call();
-      outputeth = outputeth * 0.999;
+          var outputeth = await pancakeRouter.methods
+            .getAmountOut(
+              outputtoken,
+              pool_info.output_volumn.toString(),
+              pool_info.input_volumn.toString()
+            )
+            .call();
+          outputeth = outputeth * 0.999;
 
-      await swap(
-        outputtoken,
-        outputeth,
-        1,
-        out_token_address,
-        user_wallet
-      );
+          await swap(
+            outputtoken,
+            outputeth,
+            1,
+            out_token_address,
+            user_wallet
+          );
 
-      console.log("Sell succeed");
-      succeed = true;
-      swap_started = false;
-      isBuyOrSell = true;
-      return;
-    }
-  } catch (error) {
-    swap_started = false;
-    throw error;
-  }
+          console.log("Sell succeed");
+          succeed = true;
+          swap_started = false;
+          isBuyOrSell = true;
+          return;
+        }
+      } catch (error) {
+        swap_started = false;
+        throw error;
+      }
+    },
+		PERIOD * 1000
+	)
 }
 
 async function approve(token_address, user_wallet) {

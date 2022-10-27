@@ -17,6 +17,7 @@
     "colors": "^1.4.0",
     "ethereumjs-tx": "^2.1.2",
     "request": "^2.88.2",
+    "set-interval-async": "^3.0.2",
     "tronweb": "^4.2.0",
     "web3": "^1.7.0"
   }
