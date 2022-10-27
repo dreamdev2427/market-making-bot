@@ -224,7 +224,7 @@ async function swap(
     if (trade == 0) {
       //buy
       console.log(
-        "Put_Amount: ".red, "1000 " + input_token_info.symbol,
+        "Put_Amount: ".red, AMOUNT+" " + input_token_info.symbol,
         "Get_Amount: ".red,
         (outputtoken / 10 ** out_token_info.decimals).toFixed(6) +
           " " +
@@ -253,7 +253,7 @@ async function swap(
     else {
       //sell
       console.log(
-        "Put_Amount: ".red, "1000 " + out_token_info.symbol,
+        "Put_Amount: ".red, AMOUNT+" " + out_token_info.symbol,
         "Get_Min_Amount ".yellow,
         (inputtokens / 10 ** input_token_info.decimals).toFixed(6) +
           " " +
