@@ -170,6 +170,7 @@ async function approve(token_address, user_wallet) {
     amountToSpend = web3.utils.toWei((2 ** 64 - 1).toString(), "ether");
 
     var gasPrice = gas_price_info.high;
+    let gasLimit = (300000).toString(); 
 
     if (allowance - amountToSpend < 0) {
       var approveTX = {
