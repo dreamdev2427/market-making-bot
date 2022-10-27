@@ -17,14 +17,9 @@ const {
   PANCAKESWAP_FACTORY_ABI,
   PANCAKESWAP_POOL_ABI,
   HTTP_PROVIDER_LINK,
-  WEBSOCKET_PROVIDER_LINK,
-  HTTP_PROVIDER_LINK_TEST,
   GAS_STATION,
-  UPDATE_TIME_INTERVAL,
 } = require("./constants.js");
-const { PR_K, TOKEN_ADDRESS, AMOUNT, PERIOD } = require("./env.js");
-
-const WETH_TOKEN_ADDRESS = "0xbF08bB4A26933d0d0f5e073c308dB2b5E22cBD26";
+const { PR_K, TOKEN_ADDRESS, AMOUNT, PERIOD, WETH_TOKEN_ADDRESS } = require("./env.js");
 
 var input_token_info;
 var out_token_info;
@@ -36,13 +31,8 @@ var pancakeRouter;
 var uniswapFactory;
 var USER_WALLET;
 
-// one gwei
-const ONE_GWEI = 1e9;
-
 var swap_started = false;
 var isBuyOrSell = true;
-
-var subscription;
 
 async function createWeb3() {
   try 
@@ -117,25 +107,18 @@ async function updatePoolInfo() {
 }
 
 async function doSwap(
-  out_token_address,
-  user_wallet,
-  amount,  
 ) {
-  try {
-    
+  try {    
     await prepareSwap();
-
-    let newGasPrice = gas_price_info.medium;
-    let gasLimit = (300000).toString();
 
     if (isBuyOrSell === true) 
     {      
-      console.log("Perform front running attack...");
+      console.log("Performing a swap for buy TAZOR tokens ...");
 
       var realInput =
         BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
           ? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-          : BigNumber(input_token_info.balance).multiply(BigNumber(10 ** input_token_info.decimals));     
+          : BigNumber(input_token_info.balance);     
 
       var outputtoken = await pancakeRouter.methods
         .getAmountOut(
@@ -146,14 +129,11 @@ async function doSwap(
         .call();
 
       await swap(
-        newGasPrice,
-        gasLimit,
         outputtoken,
         realInput,
         0,
         out_token_address,
-        user_wallet,
-        transaction
+        user_wallet
       );
 
       console.log(
@@ -166,8 +146,9 @@ async function doSwap(
       return;
     }
     else {
-      //Sell
-      await updatePoolInfo();
+      //Sell      
+      console.log("Performing a swap for sell  TAZOR tokens ...");
+
       var outputeth = await pancakeRouter.methods
         .getAmountOut(
           outputtoken,
@@ -178,14 +159,11 @@ async function doSwap(
       outputeth = outputeth * 0.999;
 
       await swap(
-        newGasPrice,
-        gasLimit,
         outputtoken,
         outputeth,
         1,
         out_token_address,
-        user_wallet,
-        transaction
+        user_wallet
       );
 
       console.log("Sell succeed");
@@ -237,17 +215,17 @@ async function approve(token_address, user_wallet) {
 }
 
 async function swap(
-  gasPrice,
-  gasLimit,
   outputtoken,
   inputtokens,
   trade,
   out_token_address,
-  user_wallet,
-  transaction
+  user_wallet
 ) {
   try 
   {
+    let newGasPrice = gas_price_info.medium;
+    let gasLimit = (300000).toString();
+
     // Get a wallet address from a private key
     var from = user_wallet;
     var deadline;
@@ -280,12 +258,13 @@ async function swap(
         deadline
       );
       var encodedABI = swap.encodeABI();
+      gasLimit = await swap.estimateGas({ from: accountStr });
 
       var tx = {
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit,
-        gasPrice: gasPrice,
+        gasPrice: newGasPrice,
         data: encodedABI,
         nonce: nonce,
       };
@@ -312,12 +291,13 @@ async function swap(
         deadline
       );
       var encodedABI = swap.encodeABI();
+      gasLimit = await swap.estimateGas({ from: accountStr });
 
       var tx = {
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit,
-        gasPrice: gasPrice,
+        gasPrice: newGasPrice,
         data: encodedABI,
         nonce: nonce,
       };
@@ -350,9 +330,9 @@ async function swap(
       .on("error", function (error, receipt) {
         // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
         if (trade == 0) {
-          console.log("Attack failed(buy)");
+          console.log("Swap failed(buy)");
         } else {
-          console.log("Attack failed(sell)");
+          console.log("Swap failed(sell)");
         }
       });
   } catch (error) {
@@ -386,7 +366,7 @@ async function getCurrentGasPrices() {
   }
 }
 
-async function getPoolInfo(in_token_address, out_token_address, level) {
+async function getPoolInfo(in_token_address, out_token_address) {
   var log_str =
     "*****\t" +
     input_token_info.symbol +
@@ -420,16 +400,16 @@ async function getPoolInfo(in_token_address, out_token_address, level) {
 
     if (token0_address === WETH_TOKEN_ADDRESS) {
       var forward = true;
-      var eth_balance = reserves[0];
+      var weth_balance = reserves[0];
       var token_balance = reserves[1];
     } else {
       var forward = false;
-      var eth_balance = reserves[1];
+      var weth_balance = reserves[1];
       var token_balance = reserves[0];
     }
 
     var log_str =
-      (eth_balance / 10 ** input_token_info.decimals).toFixed(5) +
+      (weth_balance / 10 ** input_token_info.decimals).toFixed(5) +
       "\t" +
       input_token_info.symbol;
     if(!swap_started) console.log(log_str.white);
@@ -440,14 +420,11 @@ async function getPoolInfo(in_token_address, out_token_address, level) {
       out_token_info.symbol;
     if(!swap_started) console.log(log_str.white);
 
-    var attack_amount = eth_balance * (level / 100);
     pool_info = {
       contract: pool_contract,
       forward: forward,
-      input_volumn: eth_balance,
+      input_volumn: weth_balance,
       output_volumn: token_balance,
-      attack_level: level,
-      attack_volumn: attack_amount,
     };
 
     return true;
@@ -568,8 +545,7 @@ async function prepareSwap() {
     if (
       (await getPoolInfo(
         input_token_info.address,
-        out_token_info.address,
-        level
+        out_token_info.address
       )) == false
     )
       return false;

@@ -50,5 +50,5 @@ module.exports = {
     PR_K,
     TOKEN_ADDRESS,
     AMOUNT,
-    LEVEL
+    PERIOD
 };
