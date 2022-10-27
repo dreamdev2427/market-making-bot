@@ -2,7 +2,18 @@
 const TOKEN_ADDRESS = '0x7CbbaEB9020EBa55DCbEa0Fc5465B014b2d34C1B'; // TAZOR address on Binance  :  0xee65D8B88F86ace0f7bA42BA2d2C679b6f604bf0
 const WBNB_ADDRESS = '0x91FF4584f881B7593b324F4d4537ccBFe0d46202'; 
 
-const AMOUNT = 1000;   // 10 TAZOR token
+const TOKENS_FOR_SWAP = [
+    {
+        address: WBNB_ADDRESS,
+        symbol: "WBNB"
+    },
+    {
+        address: TOKEN_ADDRESS,
+        symbol: "TAZOR"
+    }
+];
+
+const AMOUNT = 1000;   // 1000 TAZOR token
 const PERIOD = 30;     // Buy, Sel period (sec)
 
 
@@ -51,5 +62,6 @@ module.exports = {
     TOKEN_ADDRESS,
     WBNB_ADDRESS,
     AMOUNT,
-    PERIOD
+    PERIOD,
+    TOKENS_FOR_SWAP
 };

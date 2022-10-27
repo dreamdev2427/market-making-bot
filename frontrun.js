@@ -20,7 +20,7 @@ const {
   HTTP_PROVIDER_LINK,
   GAS_STATION,
 } = require("./constants.js");
-const { PR_K, TOKEN_ADDRESS, AMOUNT, PERIOD, WBNB_ADDRESS } = require("./env.js");
+const { PR_K, AMOUNT, PERIOD, TOKENS_FOR_SWAP } = require("./env.js");
 
 var input_token_info;
 var out_token_info;
@@ -73,10 +73,10 @@ async function main() {
     }
 
     await prepareSwap();
-    await approve(WBNB_ADDRESS, USER_WALLET);
-    await approve(TOKEN_ADDRESS, USER_WALLET);
+    await approve(TOKENS_FOR_SWAP[0].address, USER_WALLET);
+    await approve(TOKENS_FOR_SWAP[1].address, USER_WALLET);
 
-    doSwap();
+    await doSwap();
   }catch(err) {
     console.log("Exception on main configurations : ", err);
   }  
@@ -89,19 +89,17 @@ async function doSwap(
     {
       try 
       {    
-        await prepareSwap();
-
         if (isBuyOrSell === true) 
         {      
-          console.log("Performing a swap for buy TAZOR tokens ...");
+          console.log("");
+          console.log("Performing a swap ", TOKENS_FOR_SWAP[0].symbol, " ==> ", TOKENS_FOR_SWAP[1].symbol);
 
           var realInput =
-            BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-              ? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
+            BigNumber(input_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals))
+              ? BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals))
               : BigNumber(input_token_info.balance);     
 
-          var outputtoken = await pancakeRouter.methods
-            .getAmountOut(
+          var outputtoken = await pancakeRouter.methods.getAmountOut(
               realInput.toString(),
               pool_info.input_volumn.toString(),
               pool_info.output_volumn.toString()
@@ -116,22 +114,21 @@ async function doSwap(
             user_wallet
           );
 
-          console.log(
-            "Wait until the large volumn transaction is done...",
-            transaction["hash"]
-          );
-
-          console.log("Buy succeed:");
+          console.log("Buy succeed");
+          console.log("");
           isBuyOrSell = false;
-          return;
         }
         else {
           //Sell      
-          console.log("Performing a swap for sell  TAZOR tokens ...");
+          console.log("");
+          console.log("Performing a swap from ", TOKENS_FOR_SWAP[1].symbol, " ==> ", TOKENS_FOR_SWAP[0].symbol);
+          var outputtoken =
+          BigNumber(out_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
+            ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
+            : BigNumber(out_token_info.balance);   
 
-          var outputeth = await pancakeRouter.methods
-            .getAmountOut(
-              outputtoken,
+          var outputeth = await pancakeRouter.methods.getAmountIn(
+            outputtoken.toString(),
               pool_info.output_volumn.toString(),
               pool_info.input_volumn.toString()
             )
@@ -147,11 +144,13 @@ async function doSwap(
           );
 
           console.log("Sell succeed");
+          console.log("");
           succeed = true;
           swap_started = false;
           isBuyOrSell = true;
-          return;
         }
+        
+        await prepareSwap();
       } catch (error) {
         swap_started = false;
         console.log("Exception on swap : ", error);
@@ -170,10 +169,9 @@ async function approve(token_address, user_wallet) {
     allowance = BigNumber(Math.floor(Number(allowance)).toString());
     amountToSpend = web3.utils.toWei((2 ** 64 - 1).toString(), "ether");
 
-    var gasPrice = (await getCurrentGasPrices()).high;
+    var gasPrice = gas_price_info.high;
 
     if (allowance - amountToSpend < 0) {
-      console.log("max_allowance : ", amountToSpend.toString());
       var approveTX = {
         from: user_wallet.address,
         to: token_address,
@@ -189,7 +187,6 @@ async function approve(token_address, user_wallet) {
         signedTX.rawTransaction
       );
 
-      console.log("Sucessfully approved ", token_address);
     }
   } catch (error) {
     console.log("Error on approve ", error);
@@ -236,7 +233,7 @@ async function swap(
       swap = pancakeRouter.methods.swapExactTokensForTokens(
         inputtokens,
         "0",
-        [WBNB_ADDRESS, out_token_address],
+        [in_token_address, out_token_address],
         from.address,
         deadline
       );
@@ -246,8 +243,8 @@ async function swap(
       var tx = {
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
-        gas: gasLimit,
-        gasPrice: newGasPrice,
+        gas: gasLimit * 3,
+        gasPrice: newGasPrice * 10,
         data: encodedABI,
         nonce: nonce,
       };
@@ -261,26 +258,23 @@ async function swap(
           input_token_info.symbol
       );
 
-      var amountOutMin = web3.utils
-        .toBN(inputtokens)
-        .multiply(web3.utils.toBN((80).toString()))
-        .divide(web3.utils.toBN("100"));
-
       swap = pancakeRouter.methods.swapExactTokensForTokens(
         outputtoken.toString(),
         "0",
-        [out_token_address, WBNB_ADDRESS],
+        [out_token_address, in_token_address],
         from.address,
         deadline
       );
+
       var encodedABI = swap.encodeABI();
-      gasLimit = await swap.estimateGas({ from: accountStr });
+
+      gasLimit = await swap.estimateGas({ from: user_wallet.address });
 
       var tx = {
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
-        gas: gasLimit,
-        gasPrice: newGasPrice,
+        gas: gasLimit * 3,
+        gasPrice: newGasPrice * 10,
         data: encodedABI,
         nonce: nonce,
       };
@@ -288,11 +282,11 @@ async function swap(
 
     var signedTx = await from.signTransaction(tx);
 
-    console.log("====signed transaction=====", gasLimit, newGasPrice);
+    console.log("====Signed to a transaction=====");
     await web3.eth
       .sendSignedTransaction(signedTx.rawTransaction)
       .on("transactionHash", function (hash) {
-        console.log("swap : ", hash);
+        console.log("Transaction hash: ", hash);
       })
       .on("confirmation", function (confirmationNumber, receipt) {
         if (trade == 0) {
@@ -310,7 +304,6 @@ async function swap(
         }
       });
   } catch (error) {
-    console.log("Error on swap ");
     throw error;
   }
 }
@@ -355,7 +348,7 @@ async function getPoolInfo(in_token_address, out_token_address) {
       .call();
     if (pool_address == "0x0000000000000000000000000000000000000000") {
       log_str =
-        "Uniswap has no " +
+        "Pancakeswap has no " +
         out_token_info.symbol +
         "-" +
         input_token_info.symbol +
@@ -364,7 +357,7 @@ async function getPoolInfo(in_token_address, out_token_address) {
       return false;
     }
 
-    var log_str = "Address:\t" + pool_address;
+    var log_str = "Pool address:\t" + pool_address;
     if(!swap_started) console.log(log_str.white);
 
     var pool_contract = new web3.eth.Contract(PANCAKESWAP_POOL_ABI, pool_address);
@@ -372,7 +365,7 @@ async function getPoolInfo(in_token_address, out_token_address) {
 
     var token0_address = await pool_contract.methods.token0().call();
 
-    if (token0_address === WBNB_ADDRESS) {
+    if (token0_address === in_token_address) {
       var forward = true;
       var weth_balance = reserves[0];
       var token_balance = reserves[1];
@@ -403,7 +396,7 @@ async function getPoolInfo(in_token_address, out_token_address) {
 
     return true;
   } catch (error) {
-    console.log("Error: Get Pair Info", error);
+    console.log("Get Pair Info : ", error);
     throw error;
   }
 }
@@ -415,7 +408,6 @@ async function getETHInfo(user_wallet) {
     var symbol = "ETH";
 
     return {
-      address: WBNB_ADDRESS,
       balance: balance,
       symbol: symbol,
       decimals: decimals,
@@ -437,12 +429,12 @@ async function getTokenInfo(tokenAddr, user_wallet) {
       .balanceOf(user_wallet.address)
       .call();
     var decimals = await token_contract.methods.decimals().call();
-    var symbol = await token_contract.methods.symbol().call();
+    // var symbol = await token_contract.methods.symbol().call();
 
     return {
       address: tokenAddr,
       balance: balance,
-      symbol: symbol,
+      symbol: TOKENS_FOR_SWAP.find(item => item.address === tokenAddr).symbol,
       decimals: decimals,
       token_contract,
     };
@@ -453,29 +445,39 @@ async function getTokenInfo(tokenAddr, user_wallet) {
 }
 
 async function prepareSwap() {
-  in_token_address = WBNB_ADDRESS;
-  out_token_address = TOKEN_ADDRESS;
+  in_token_address = TOKENS_FOR_SWAP[0].address;
+  out_token_address = TOKENS_FOR_SWAP[1].address;
   user_wallet = USER_WALLET;
   amount = AMOUNT;
   period = PERIOD;
 
   try {
-    gas_price_info = await getCurrentGasPrices();
+    try{
+      gas_price_info = await getCurrentGasPrices();
+    }catch (err)
+    {
+      // console.log("Fetching gas price : ", err);
+      gas_price_info = {
+        high: 5200000000,
+        medium: 5100000000,
+        low: 5000000000
+      }
+    }
 
     var log_str = "***** Your Wallet Balance *****";
-    log_str = "wallet address:\t" + user_wallet.address;
+    log_str = "Wallet address:\t" + user_wallet.address;
     if(!swap_started) console.log(log_str.green);
 
     let native_info = await getETHInfo(user_wallet);
     log_str =
-      "WETH balance:\t" + web3.utils.fromWei(native_info.balance, "ether");
+      "ETH balance:\t" + web3.utils.fromWei(native_info.balance, "ether");
       if(!swap_started) console.log(log_str.green);
 
     if (native_info.balance < 0.05 * 10 ** 18) 
     {
       console.log("INSUFFICIENT WETH BALANCE!".yellow);
       log_str =
-        "Your wallet WETH balance must be more 0.02 " +
+        "Your wallet ETH balance must be more 0.02 for swap " +
         native_info.symbol +
         "(+0.05 ETH:GasFee) ";
         if(!swap_started) console.log(log_str.red);
@@ -487,6 +489,9 @@ async function prepareSwap() {
       in_token_address,
       user_wallet
     );
+    if (out_token_info === null) {
+      return false;
+    }
 
     if (input_token_info.balance <= 0) {
       console.log("INSUFFICIENT INUT TOKEN BALANCE!".yellow);
@@ -505,15 +510,6 @@ async function prepareSwap() {
     if (out_token_info === null) {
       return false;
     }
-
-    log_str =
-      (
-        Number(out_token_info.balance) /
-        10 ** Number(out_token_info.decimals)
-      ).toFixed(5) +
-      "\t" +
-      out_token_info.symbol;
-    if(!swap_started) console.log(log_str.white);
 
     //check pool info
     if (
