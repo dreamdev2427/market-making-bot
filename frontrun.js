@@ -98,13 +98,12 @@ async function doSwap(
             ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
             : BigNumber(out_token_info.balance);   
 
-          var outputeth = await pancakeRouter.methods.getAmountIn(
+          var outputeth = await pancakeRouter.methods.getAmountOut(
             outputtoken.toString(),
               pool_info.output_volumn.toString(),
               pool_info.input_volumn.toString()
             )
             .call();
-          outputeth = outputeth * 0.999;
 
           await swap(
             outputtoken,
@@ -261,7 +260,7 @@ async function swap(
     else {
       //sell
       console.log(
-        "Put_Amount: ".red, (outputtoken / 10 ** outputtoken.decimals).toFixed(6)+" " + out_token_info.symbol,
+        "Put_Amount: ".red, (outputtoken / 10 ** out_token_info.decimals).toFixed(6)+" " + out_token_info.symbol,
         "Get_Min_Amount ".yellow,
         (inputtokens / 10 ** input_token_info.decimals).toFixed(6) +
           " " +
