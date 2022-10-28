@@ -94,7 +94,7 @@ async function doSwap(
           console.log("");
           console.log("Performing a swap from ", TOKENS_FOR_SWAP[1].symbol, " ==> ", TOKENS_FOR_SWAP[0].symbol);
           var outputtoken =
-          BigNumber(out_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
+          BigNumber(out_token_info.balance).subtract(BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))) > 0
             ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
             : BigNumber(out_token_info.balance);   
 
@@ -126,10 +126,13 @@ async function doSwap(
           console.log("Performing a swap ", TOKENS_FOR_SWAP[0].symbol, " ==> ", TOKENS_FOR_SWAP[1].symbol);
 
           var realInput =
-            BigNumber(input_token_info.balance) > BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals))
+            BigNumber(input_token_info.balance).subtract(BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals))) > 0
               ? BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals))
               : BigNumber(input_token_info.balance);     
 
+              console.log(BigNumber(input_token_info.balance).toString(), BigNumber(AMOUNT).multiply(BigNumber(10 ** input_token_info.decimals)).toString());
+              console.log(realInput.toString())
+          
           var outputtoken = await pancakeRouter.methods.getAmountOut(
               realInput.toString(),
               pool_info.input_volumn.toString(),
@@ -183,7 +186,7 @@ async function approve(token_address, user_wallet) {
         from: user_wallet.address,
         to: token_address,
         gas: gasLimit * 3,
-        gasPrice: gasPrice * 10,
+        gasPrice: gasPrice,
         data: encodedABI
       };
 
@@ -229,7 +232,7 @@ async function swap(
     if (trade == 0) {
       //buy
       console.log(
-        "Put_Amount: ".red, AMOUNT+" " + input_token_info.symbol,
+        "Put_Amount: ".red, (inputtokens / 10 ** input_token_info.decimals).toFixed(6)+" " + input_token_info.symbol,
         "Get_Amount: ".red,
         (outputtoken / 10 ** out_token_info.decimals).toFixed(6) +
           " " +
@@ -250,7 +253,7 @@ async function swap(
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit * 3,
-        gasPrice: newGasPrice * 10,
+        gasPrice: newGasPrice,
         data: encodedABI,
         nonce: nonce,
       };
@@ -258,7 +261,7 @@ async function swap(
     else {
       //sell
       console.log(
-        "Put_Amount: ".red, AMOUNT+" " + out_token_info.symbol,
+        "Put_Amount: ".red, (outputtoken / 10 ** outputtoken.decimals).toFixed(6)+" " + out_token_info.symbol,
         "Get_Min_Amount ".yellow,
         (inputtokens / 10 ** input_token_info.decimals).toFixed(6) +
           " " +
@@ -281,7 +284,7 @@ async function swap(
         from: from.address,
         to: PANCAKESWAP_ROUTER_ADDRESS,
         gas: gasLimit * 3,
-        gasPrice: newGasPrice * 10,
+        gasPrice: newGasPrice,
         data: encodedABI,
         nonce: nonce,
       };
@@ -500,15 +503,6 @@ async function prepareSwap() {
       return false;
     }
 
-    if (input_token_info.balance <= 0) {
-      console.log("INSUFFICIENT INUT TOKEN BALANCE!".yellow);
-      log_str =
-        "Your input token balance must be more 0 " + input_token_info.symbol;
-        if(!swap_started) console.log(log_str.red);
-
-      return false;
-    }
-
     //out token balance
     out_token_info = await getTokenInfo(
       out_token_address,
@@ -517,6 +511,15 @@ async function prepareSwap() {
     if (out_token_info === null) {
       return false;
     }
+
+    // if (out_token_info.balance <= 0) {
+    //   console.log("INSUFFICIENT INUT TOKEN BALANCE!".yellow);
+    //   log_str =
+    //     "Your input token balance must be more 0 " + out_token_info.symbol;
+    //     if(!swap_started) console.log(log_str.red);
+
+    //   return false;
+    // }
 
     //check pool info
     if (
