@@ -133,8 +133,8 @@
              )
              .call();
 
-           var realInput = BigNumber(input_token_info.balance).subtract(BigNumber(expectInput).multiply(BigNumber(10 ** input_token_info.decimals))) > 0
-           ? BigNumber(expectInput).multiply(BigNumber(10 ** input_token_info.decimals))
+           var realInput = BigNumber(input_token_info.balance).subtract(BigNumber(expectInput).multiply(103).divide(100).multiply(BigNumber(10 ** input_token_info.decimals))) > 0
+           ? BigNumber(expectInput).multiply(103).divide(100).multiply(BigNumber(10 ** input_token_info.decimals))
            : BigNumber(input_token_info.balance);  
 
            await swap(
