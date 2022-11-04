@@ -97,7 +97,13 @@
            BigNumber(out_token_info.balance).subtract(BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))) > 0
              ? BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals))
              : BigNumber(out_token_info.balance);   
- 
+          
+           if(outputtoken == 0) 
+           {
+            console.log("INSUFFICIENT BALANCE of "+out_token_info.symbol+"s");
+            return;
+           }
+
            var outputeth = await pancakeRouter.methods.getAmountOut(
              outputtoken.toString(),
                pool_info.output_volumn.toString(),
@@ -125,17 +131,34 @@
            console.log("Performing a swap ", TOKENS_FOR_SWAP[0].symbol, " ==> ", TOKENS_FOR_SWAP[1].symbol);
  
            var expectedOutput = BigNumber(AMOUNT).multiply(BigNumber(10 ** out_token_info.decimals));    
+          //  console.log("expectedOutput = ", expectedOutput.toString());
                
            var expectInput = await pancakeRouter.methods.getAmountIn(
                expectedOutput.toString(),
-               pool_info.output_volumn.toString(),
-               pool_info.input_volumn.toString()
+               pool_info.input_volumn.toString(),
+               pool_info.output_volumn.toString()
              )
              .call();
+          // console.log("expectInput = ", expectInput.toString());
 
-           var realInput = BigNumber(input_token_info.balance).subtract(BigNumber(expectInput).multiply(103).divide(100).multiply(BigNumber(10 ** input_token_info.decimals))) > 0
-           ? BigNumber(expectInput).multiply(103).divide(100).multiply(BigNumber(10 ** input_token_info.decimals))
-           : BigNumber(input_token_info.balance);  
+          var realInput = expectInput;
+          // console.log("realInput = ", realInput.toString());
+           var insufficient = BigNumber(input_token_info.balance).subtract(BigNumber(expectInput)) < 0? true : false;
+          // console.log("insufficient = ", insufficient.toString());
+           
+           if(insufficient === true)
+           {
+              realInput = BigNumber(input_token_info.balance);   
+              // console.log("realInput = ", realInput.toString());          
+              expectedOutput = await pancakeRouter.methods.getAmountOut(
+                realInput.toString(),
+                pool_info.input_volumn.toString(),
+                pool_info.output_volumn.toString()
+              )
+              .call();
+              
+              // console.log("expectedOutput = ", expectedOutput.toString());          
+           }
 
            await swap(
             expectedOutput,
@@ -250,7 +273,7 @@
          from: from.address,
          to: PANCAKESWAP_ROUTER_ADDRESS,
          gas: gasLimit * 3,
-         gasPrice: newGasPrice,
+         gasPrice: newGasPrice ,
          data: encodedABI,
          nonce: nonce,
        };
@@ -281,7 +304,7 @@
          from: from.address,
          to: PANCAKESWAP_ROUTER_ADDRESS,
          gas: gasLimit * 3,
-         gasPrice: newGasPrice,
+         gasPrice: newGasPrice ,
          data: encodedABI,
          nonce: nonce,
        };

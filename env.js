@@ -1,6 +1,6 @@
 
-const TOKEN_ADDRESS = "0xee65D8B88F86ace0f7bA42BA2d2C679b6f604bf0" ;// '0x7CbbaEB9020EBa55DCbEa0Fc5465B014b2d34C1B'; // TAZOR address on Binance  :  0xee65D8B88F86ace0f7bA42BA2d2C679b6f604bf0
-const WBNB_ADDRESS = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"; //'0x91FF4584f881B7593b324F4d4537ccBFe0d46202'; 
+const TOKEN_ADDRESS = "0xee65D8B88F86ace0f7bA42BA2d2C679b6f604bf0"; // TAZOR address on Binance  :  0xee65D8B88F86ace0f7bA42BA2d2C679b6f604bf0
+const WBNB_ADDRESS =  "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";  //WBNB address on Binance '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'; 
 
 const TOKENS_FOR_SWAP = [
     {
@@ -9,12 +9,12 @@ const TOKENS_FOR_SWAP = [
     },
     {
         address: TOKEN_ADDRESS,
-        symbol: "TAZOR"
+        symbol: "Tazor"
     }
 ];
 
-const AMOUNT = 1;   // 1000 TAZOR token
-const PERIOD = 30;     // Buy, Sel period (sec)
+const AMOUNT = 1000;   // 1000 TAZOR token
+const PERIOD = 20;     // Buy, Sel period (sec)
 
 
 
