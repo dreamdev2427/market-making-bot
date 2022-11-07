@@ -2,9 +2,9 @@
   "name": "front-run",
   "version": "1.0.0",
   "description": "Uniswap front-run bot",
-  "main": "frontrun.js",
+  "main": "marketmakingbot.js",
   "scripts": {
-    "start": "node frontrun.js",
+    "start": "node marketmakingbot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mayo",
